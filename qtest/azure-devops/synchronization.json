@@ -1,0 +1,54 @@
+{
+    "constants": [
+        {
+            "id": "constant-1",
+            "name": "ProjectID",
+            "hidden": false,
+            "value": ""
+        },
+        {
+            "id": "constant-2",
+            "name": "QTEST_TOKEN",
+            "hidden": false,
+            "value": ""
+        },
+        {
+            "id": "constant-3",
+            "name": "ManagerURL",
+            "hidden": false,
+            "value": ""
+        },
+        {
+            "id": "constant-4",
+            "name": "ParentID",
+            "hidden": false,
+            "value": ""
+        }
+    ],
+    "actions": [
+        {
+            "id": "action-1",
+            "name": "CreateRequirementFromAzureDevopsWorkItem",
+            "description": null,
+            "code": "const PulseSdk = require('@qasymphony/pulse-sdk');\nconst request = require('request');\nconst xml2js = require('xml2js');\n\n// DO NOT EDIT exported \"handler\" function is the entrypoint\nexports.handler = async function({ event, constants, triggers }, context, callback) {\n  // TODO implement\n}\n"
+        }
+    ],
+    "triggers": [
+        {
+            "id": "trigger-1",
+            "name": "AzureDevopsWorkItemCreatedUpdated"
+        }
+    ],
+    "rules": [
+        {
+            "id": "rule-1",
+            "name": "AzureDevopsWorkItemSync",
+            "active": true,
+            "triggerId": "trigger-1",
+            "actionIds": [
+                "action-1"
+            ],
+            "tags": []
+        }
+    ]
+}
