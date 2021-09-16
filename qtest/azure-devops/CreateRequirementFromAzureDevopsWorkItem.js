@@ -23,20 +23,20 @@ exports.handler = async function ({ event, constants, triggers }, context, callb
         case eventType.UPDATED:
             console.log(`[Info] Update workitem event received for 'WI${workItemId}'`);
             const getReqResult = await getRequirementByWorkItemId(workItemId);
-            console.log(getReqResult);
             if (getReqResult.failed) {
                 return;
             }
-            requirementToUpdate = getReqResult.requirement;
+            if (getReqResult.requirement === undefined && !constants.AllowCreationOnUpdate) {
+                console.log("[Info] Creation of Requirement on update event not enabled. Exiting.");
+                return;
+            }
             break;
         default:
             console.log(`[Error] Unknown workitem event type '${event.eventType}' for 'WI${workitemId}'`);
             return;
     }
 
-    if (requirementToUpdate === undefined && !constants.AllowCreationOnUpdate) {
-        console.log("[Info] Creation of Requirement on update event not enabled. Exiting.");
-        return;
+    if (requirementToUpdate === undefined) {
     }
 
     function getNamePrefix(workItemId) {
