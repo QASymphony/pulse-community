@@ -29,10 +29,6 @@ Description: ${eventData.resource.revision.fields["System.Description"]}`;
 
     const workItemId = event.resource.workItemId;
     const namePrefix = getNamePrefix(workItemId);
-    const requirementDescription = buildRequirementDescription(event);
-    const requirementName = buildRequirementName(namePrefix, event);
-    console.log(requirementName);
-    console.log(requirementDescription);
 
     let requirementToUpdate = undefined;
     switch (event.eventType) {
@@ -49,13 +45,18 @@ Description: ${eventData.resource.revision.fields["System.Description"]}`;
                 console.log("[Info] Creation of Requirement on update event not enabled. Exiting.");
                 return;
             }
+            requirementToUpdate = getReqResult.requirement;
             break;
         default:
             console.log(`[Error] Unknown workitem event type '${event.eventType}' for 'WI${workitemId}'`);
             return;
     }
 
-    if (requirementToUpdate === undefined) {
+    const requirementDescription = buildRequirementDescription(event);
+    const requirementName = buildRequirementName(namePrefix, event);
+
+    if (requirementToUpdate) {
+        await updateRequirement(requirementToUpdate, requirementName, requirementDescription);
     }
 
     function getNamePrefix(workItemId) {
@@ -97,17 +98,50 @@ Description: ${eventData.resource.revision.fields["System.Description"]}`;
         return { failed: failed, requirement: requirement };
     }
 
-    async function post(url, requestBody) {
+    async function updateRequirement(requirementToUpdate, name, description) {
+        const requirementId = requirementToUpdate.id;
+        const url = `https://${constants.ManagerURL}/api/v3/projects/${constants.ProjectID}/requirements/${requirementId}`;
+        const requestBody = {
+            name: name,
+            properties: [
+                {
+                    field_id: 10530218, //description field id
+                    field_value: description,
+                },
+            ],
+        };
+
+        console.log(`[Info] Updating requirement '${requirementId}'`);
+
+        try {
+            await put(url, requestBody);
+            console.log(`[Info] Requirement '${requirementId}' updated.`);
+        } catch (error) {
+            console.log(`[Error] Failed to update requirement '${requirementId}'.`, error);
+        }
+    }
+
+    function post(url, requestBody) {
+        return doPostPut(url, "POST", requestBody);
+    }
+
+    function put(url, requestBody) {
+        return doPostPut(url, "PUT", requestBody);
+    }
+
+    async function doPostPut(url, method, requestBody) {
         const opts = {
             url: url,
             json: true,
             headers: standardHeaders,
             body: requestBody,
+            method: method,
         };
 
         return new Promise((resolve, reject) => {
-            request.post(opts, function (error, response, body) {
+            request(opts, function (error, response, body) {
                 if (error) reject(error);
+                if (response.statusCode < 200 || response.statusCode >= 300) reject(`HTTP ${response.statusCode}`);
 
                 resolve(body);
             });
