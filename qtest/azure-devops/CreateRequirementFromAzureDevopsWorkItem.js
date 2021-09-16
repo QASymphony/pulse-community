@@ -22,7 +22,8 @@ exports.handler = async function ({ event, constants, triggers }, context, callb
             break;
         case eventType.UPDATED:
             console.log(`[Info] Update workitem event received for 'WI${workItemId}'`);
-            const getReqResult = getRequirementByWorkItemId(workItemId);
+            const getReqResult = await getRequirementByWorkItemId(workItemId);
+            console.log(getReqResult);
             if (getReqResult.failed) {
                 return;
             }
@@ -42,39 +43,55 @@ exports.handler = async function ({ event, constants, triggers }, context, callb
         return `WI${workItemId}:`;
     }
 
-    function getRequirementByWorkItemId(workItemId) {
+    async function getRequirementByWorkItemId(workItemId) {
         const prefix = getNamePrefix(workItemId);
-        const opts = {
-            url: "https://" + constants.ManagerURL + "/api/v3/projects/" + constants.ProjectID + "/search",
-            json: true,
-            headers: standardHeaders,
-            body: {
-                object_type: "requirements",
-                fields: ["*"],
-                query: "Name ~ '" + prefix + "'",
-            },
+        const url = "https://" + constants.ManagerURL + "/api/v3/projects/" + constants.ProjectID + "/search";
+        const requestBody = {
+            object_type: "requirements",
+            fields: ["*"],
+            query: "Name ~ '" + prefix + "'",
         };
 
         console.log(`[Info] Get existing requirement for 'WI${workItemId}'`);
         let failed = false;
         let requirement = undefined;
-        request.post(opts, function (err, response, body) {
-            if (err || !body) {
-                console.log("[Error] Failed to get requirement by work item id.", err);
-                failed = true;
+
+        try {
+            const response = await post(url, requestBody);
+            console.log(response);
+
+            if (!response || response.total === 0) {
+                console.log("[Info] Requirement not found by work item id.");
             } else {
-                if (body.total === 0) {
-                    console.log("[Info] Requirement not found by work item id.");
+                if (response.total === 1) {
+                    requirement = response.items[0];
                 } else {
-                    if (body.total === 1) {
-                    } else {
-                        console.log("[Warn] Multiple Requirements found by work item id.");
-                        requirement = body.items[0];
-                    }
+                    failed = true;
+                    console.log("[Warn] Multiple Requirements found by work item id.");
                 }
             }
+        } catch (error) {
+            console.log("[Error] Failed to get requirement by work item id.", error);
+            failed = true;
+        }
 
-            return { failed: failed, requirement: requirement };
+        return { failed: failed, requirement: requirement };
+    }
+
+    async function post(url, requestBody) {
+        const opts = {
+            url: url,
+            json: true,
+            headers: standardHeaders,
+            body: requestBody,
+        };
+
+        return new Promise((resolve, reject) => {
+            request.post(opts, function (error, response, body) {
+                if (error) reject(error);
+
+                resolve(body);
+            });
         });
     }
 };
