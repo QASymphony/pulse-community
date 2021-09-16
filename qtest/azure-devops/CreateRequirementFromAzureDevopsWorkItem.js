@@ -5,17 +5,25 @@ const xml2js = require("xml2js");
 // DO NOT EDIT exported "handler" function is the entrypoint
 exports.handler = async function ({ event, constants, triggers }, context, callback) {
     function buildRequirementDescription(eventData) {
+        // In case of update the fields can be taken from the revision, in case of create from the resource directly
+        const fields = getFields(eventData);
         return `<a href="${eventData.resource._links.html.href}" target="_blank">Open in Azure DevOps</a><br>
-<b>Type:</b> ${eventData.resource.revision.fields["System.WorkItemType"]}<br>
-<b>Area:</b> ${eventData.resource.revision.fields["System.AreaPath"]}<br>
-<b>Iteration:</b> ${eventData.resource.revision.fields["System.IterationPath"]}<br>
-<b>State:</b> ${eventData.resource.revision.fields["System.State"]}<br>
-<b>Reason:</b> ${eventData.resource.revision.fields["System.Reason"]}<br>
-<b>Description:</b> ${eventData.resource.revision.fields["System.Description"]}`;
+<b>Type:</b> ${fields["System.WorkItemType"]}<br>
+<b>Area:</b> ${fields["System.AreaPath"]}<br>
+<b>Iteration:</b> ${fields["System.IterationPath"]}<br>
+<b>State:</b> ${fields["System.State"]}<br>
+<b>Reason:</b> ${fields["System.Reason"]}<br>
+<b>Description:</b> ${fields["System.Description"] || ""}`;
     }
 
     function buildRequirementName(namePrefix, eventData) {
-        return `${namePrefix}${eventData.resource.revision.fields["System.Title"]}`;
+        const fields = getFields(eventData);
+        return `${namePrefix}${fields["System.Title"]}`;
+    }
+
+    function getFields(eventData) {
+        // In case of update the fields can be taken from the revision, in case of create from the resource directly
+        return eventData.resource.revision ? eventData.resource.revision.fields : eventData.resource.fields;
     }
 
     const standardHeaders = {
@@ -27,15 +35,15 @@ exports.handler = async function ({ event, constants, triggers }, context, callb
         UPDATED: "workitem.updated",
     };
 
-    const workItemId = event.resource.workItemId;
-    const namePrefix = getNamePrefix(workItemId);
-
+    let workItemId = undefined;
     let requirementToUpdate = undefined;
     switch (event.eventType) {
         case eventType.CREATED:
+            workItemId = event.resource.id;
             console.log(`[Info] Create workitem event received for 'WI${workItemId}'`);
             break;
         case eventType.UPDATED:
+            workItemId = event.resource.workItemId;
             console.log(`[Info] Update workitem event received for 'WI${workItemId}'`);
             const getReqResult = await getRequirementByWorkItemId(workItemId);
             if (getReqResult.failed) {
@@ -52,11 +60,14 @@ exports.handler = async function ({ event, constants, triggers }, context, callb
             return;
     }
 
+    const namePrefix = getNamePrefix(workItemId);
     const requirementDescription = buildRequirementDescription(event);
     const requirementName = buildRequirementName(namePrefix, event);
 
     if (requirementToUpdate) {
         await updateRequirement(requirementToUpdate, requirementName, requirementDescription);
+    } else {
+        createRequirement(requirementName, requirementDescription);
     }
 
     function getNamePrefix(workItemId) {
@@ -111,13 +122,36 @@ exports.handler = async function ({ event, constants, triggers }, context, callb
             ],
         };
 
-        console.log(`[Info] Updating requirement '${requirementId}'`);
+        console.log(`[Info] Updating requirement '${requirementId}'.`);
 
         try {
             await put(url, requestBody);
             console.log(`[Info] Requirement '${requirementId}' updated.`);
         } catch (error) {
             console.log(`[Error] Failed to update requirement '${requirementId}'.`, error);
+        }
+    }
+
+    async function createRequirement(name, description) {
+        const url = `https://${constants.ManagerURL}/api/v3/projects/${constants.ProjectID}/requirements`;
+        const requestBody = {
+            name: name,
+            parent_id: constants.ParentID,
+            properties: [
+                {
+                    field_id: 10530218, //description field id
+                    field_value: description,
+                },
+            ],
+        };
+
+        console.log(`[Info] Creating requirement.`);
+
+        try {
+            await post(url, requestBody);
+            console.log(`[Info] Requirement created.`);
+        } catch (error) {
+            console.log(`[Error] Failed to create requirement`, error);
         }
     }
 
