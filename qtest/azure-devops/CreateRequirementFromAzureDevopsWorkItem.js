@@ -5,13 +5,13 @@ const xml2js = require("xml2js");
 // DO NOT EDIT exported "handler" function is the entrypoint
 exports.handler = async function ({ event, constants, triggers }, context, callback) {
     function buildRequirementDescription(eventData) {
-        return `Url: ${eventData.resource._links.html.href}
-Type: ${eventData.resource.revision.fields["System.WorkItemType"]}
-Area: ${eventData.resource.revision.fields["System.AreaPath"]}
-Iteration: ${eventData.resource.revision.fields["System.IterationPath"]}
-State: ${eventData.resource.revision.fields["System.State"]}
-Reason: ${eventData.resource.revision.fields["System.Reason"]}
-Description: ${eventData.resource.revision.fields["System.Description"]}`;
+        return `<a href="${eventData.resource._links.html.href}" target="_blank">Open in Azure DevOps</a><br>
+<b>Type:</b> ${eventData.resource.revision.fields["System.WorkItemType"]}<br>
+<b>Area:</b> ${eventData.resource.revision.fields["System.AreaPath"]}<br>
+<b>Iteration:</b> ${eventData.resource.revision.fields["System.IterationPath"]}<br>
+<b>State:</b> ${eventData.resource.revision.fields["System.State"]}<br>
+<b>Reason:</b> ${eventData.resource.revision.fields["System.Reason"]}<br>
+<b>Description:</b> ${eventData.resource.revision.fields["System.Description"]}`;
     }
 
     function buildRequirementName(namePrefix, eventData) {
@@ -60,7 +60,7 @@ Description: ${eventData.resource.revision.fields["System.Description"]}`;
     }
 
     function getNamePrefix(workItemId) {
-        return `WI${workItemId}:`;
+        return `WI${workItemId}: `;
     }
 
     async function getRequirementByWorkItemId(workItemId) {
