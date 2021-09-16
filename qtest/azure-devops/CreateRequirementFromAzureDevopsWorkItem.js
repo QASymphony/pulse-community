@@ -116,7 +116,7 @@ exports.handler = async function ({ event, constants, triggers }, context, callb
             name: name,
             properties: [
                 {
-                    field_id: 10530218, //description field id
+                    field_id: constants.DescriptionFieldID,
                     field_value: description,
                 },
             ],
@@ -139,7 +139,7 @@ exports.handler = async function ({ event, constants, triggers }, context, callb
             parent_id: constants.ParentID,
             properties: [
                 {
-                    field_id: 10530218, //description field id
+                    field_id: constants.DescriptionFieldID,
                     field_value: description,
                 },
             ],
