@@ -4,6 +4,20 @@ const xml2js = require("xml2js");
 
 // DO NOT EDIT exported "handler" function is the entrypoint
 exports.handler = async function ({ event, constants, triggers }, context, callback) {
+    function buildRequirementDescription(eventData) {
+        return `Url: ${eventData.resource._links.html.href}
+Type: ${eventData.resource.revision.fields["System.WorkItemType"]}
+Area: ${eventData.resource.revision.fields["System.AreaPath"]}
+Iteration: ${eventData.resource.revision.fields["System.IterationPath"]}
+State: ${eventData.resource.revision.fields["System.State"]}
+Reason: ${eventData.resource.revision.fields["System.Reason"]}
+Description: ${eventData.resource.revision.fields["System.Description"]}`;
+    }
+
+    function buildRequirementName(namePrefix, eventData) {
+        return `${namePrefix}${eventData.resource.revision.fields["System.Title"]}`;
+    }
+
     const standardHeaders = {
         "Content-Type": "application/json",
         Authorization: `bearer ${constants.QTEST_TOKEN}`,
@@ -14,6 +28,11 @@ exports.handler = async function ({ event, constants, triggers }, context, callb
     };
 
     const workItemId = event.resource.workItemId;
+    const namePrefix = getNamePrefix(workItemId);
+    const requirementDescription = buildRequirementDescription(event);
+    const requirementName = buildRequirementName(namePrefix, event);
+    console.log(requirementName);
+    console.log(requirementDescription);
 
     let requirementToUpdate = undefined;
     switch (event.eventType) {
