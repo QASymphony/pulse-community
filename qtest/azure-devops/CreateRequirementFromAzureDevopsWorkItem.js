@@ -5,7 +5,6 @@ const xml2js = require("xml2js");
 // DO NOT EDIT exported "handler" function is the entrypoint
 exports.handler = async function ({ event, constants, triggers }, context, callback) {
     function buildRequirementDescription(eventData) {
-        // In case of update the fields can be taken from the revision, in case of create from the resource directly
         const fields = getFields(eventData);
         return `<a href="${eventData.resource._links.html.href}" target="_blank">Open in Azure DevOps</a><br>
 <b>Type:</b> ${fields["System.WorkItemType"]}<br>
@@ -33,16 +32,18 @@ exports.handler = async function ({ event, constants, triggers }, context, callb
     const eventType = {
         CREATED: "workitem.created",
         UPDATED: "workitem.updated",
+        DELETED: "workitem.deleted",
     };
 
     let workItemId = undefined;
     let requirementToUpdate = undefined;
     switch (event.eventType) {
-        case eventType.CREATED:
+        case eventType.CREATED: {
             workItemId = event.resource.id;
             console.log(`[Info] Create workitem event received for 'WI${workItemId}'`);
             break;
-        case eventType.UPDATED:
+        }
+        case eventType.UPDATED: {
             workItemId = event.resource.workItemId;
             console.log(`[Info] Update workitem event received for 'WI${workItemId}'`);
             const getReqResult = await getRequirementByWorkItemId(workItemId);
@@ -55,11 +56,28 @@ exports.handler = async function ({ event, constants, triggers }, context, callb
             }
             requirementToUpdate = getReqResult.requirement;
             break;
+        }
+        case eventType.DELETED: {
+            workItemId = event.resource.id;
+            console.log(`[Info] Delete workitem event received for 'WI${workItemId}'`);
+            const getReqResult = await getRequirementByWorkItemId(workItemId);
+            if (getReqResult.failed) {
+                return;
+            }
+            if (getReqResult.requirement === undefined) {
+                console.log(`[Info] Requirement not found to delete. Exiting.`);
+                return;
+            }
+            // Delete requirement and finish
+            await deleteRequirement(getReqResult.requirement);
+            return;
+        }
         default:
             console.log(`[Error] Unknown workitem event type '${event.eventType}' for 'WI${workitemId}'`);
             return;
     }
 
+    // Prepare data to create/update requirement
     const namePrefix = getNamePrefix(workItemId);
     const requirementDescription = buildRequirementDescription(event);
     const requirementName = buildRequirementName(namePrefix, event);
@@ -155,15 +173,29 @@ exports.handler = async function ({ event, constants, triggers }, context, callb
         }
     }
 
+    async function deleteRequirement(requirementToDelete) {
+        const requirementId = requirementToDelete.id;
+        const url = `https://${constants.ManagerURL}/api/v3/projects/${constants.ProjectID}/requirements/${requirementId}`;
+
+        console.log(`[Info] Deleting requirement '${requirementId}'.`);
+
+        try {
+            await doRequest(url, "DELETE", null);
+            console.log(`[Info] Requirement '${requirementId}' deleted.`);
+        } catch (error) {
+            console.log(`[Error] Failed to delete requirement '${requirementId}'.`, error);
+        }
+    }
+
     function post(url, requestBody) {
-        return doPostPut(url, "POST", requestBody);
+        return doRequest(url, "POST", requestBody);
     }
 
     function put(url, requestBody) {
-        return doPostPut(url, "PUT", requestBody);
+        return doRequest(url, "PUT", requestBody);
     }
 
-    async function doPostPut(url, method, requestBody) {
+    async function doRequest(url, method, requestBody) {
         const opts = {
             url: url,
             json: true,
