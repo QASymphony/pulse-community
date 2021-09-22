@@ -23,12 +23,25 @@
             "name": "ParentID",
             "hidden": false,
             "value": ""
+        },
+        {
+            "id": "constant-5",
+            "name": "DescriptionFieldID",
+            "hidden": false,
+            "value": ""
+        },
+        {
+            "id": "constant-6",
+            "name": "AllowCreationOnUpdate",
+            "hidden": false,
+            "value": "false"
         }
+
     ],
     "actions": [
         {
             "id": "action-1",
-            "name": "CreateRequirementFromAzureDevopsWorkItem",
+            "name": "SyncRequirementFromAzureDevopsWorkItem",
             "description": null,
             "code": "const PulseSdk = require('@qasymphony/pulse-sdk');\nconst request = require('request');\nconst xml2js = require('xml2js');\n\n// DO NOT EDIT exported \"handler\" function is the entrypoint\nexports.handler = async function({ event, constants, triggers }, context, callback) {\n  // TODO implement\n}\n"
         }
@@ -36,13 +49,13 @@
     "triggers": [
         {
             "id": "trigger-1",
-            "name": "AzureDevopsWorkItemCreatedUpdated"
+            "name": "AzureDevopsWorkItemForRequirementCreatedUpdatedDeleted"
         }
     ],
     "rules": [
         {
             "id": "rule-1",
-            "name": "AzureDevopsWorkItemSync",
+            "name": "AzureDevopsWorkItemToRequirementSync",
             "active": true,
             "triggerId": "trigger-1",
             "actionIds": [
