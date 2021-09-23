@@ -11,27 +11,35 @@ exports.handler = async function ({ event, constants, triggers }, context, callb
 
     if (!defect) return;
 
-    const name = getFieldValue(defect, "Summary");
-    console.log(`[Info] Defect name: ${name}`);
+    const summaryField = getField(defect, "Summary");
+    const descriptionField = getField(defect, "Description");
 
-    const description = getFieldValue(defect, "Description");
+    if (!summaryField || !descriptionField) {
+        console.log("[Error] Fields not found, exiting.");
+    }
+
+    const summary = summaryField.field_value;
+    const summaryFieldId = summaryField.field_id;
+    console.log(`[Info] Defect summary: ${summary}`);
+    const description = descriptionField.field_value;
     console.log(`[Info] Defect description: ${description}`);
-
     const link = defect.web_url;
     console.log(`[Info] Defect link: ${link}`);
 
-    const bug = await createAzDoBug(defectId, name, description, link);
+    const bug = await createAzDoBug(defectId, summary, description, link);
 
     if (!bug) return;
 
-    console.log(`[Info] Bug created in Azure DevOps:`);
-    console.log(bug);
+    const workItemId = bug.id;
+    const newSummary = `${getNamePrefix(workItemId)}${summary}`;
+    console.log(`[Info] New defect name: ${newSummary}`);
+    await updateDefectSummary(defectId, summaryFieldId, newSummary);
 
     function getNamePrefix(workItemId) {
         return `WI${workItemId}: `;
     }
 
-    function getFieldValue(obj, fieldName) {
+    function getField(obj, fieldName) {
         if (!obj || !obj.properties) {
             console.log(`[Warn] Obj/properties not found.`);
             return;
@@ -42,7 +50,7 @@ exports.handler = async function ({ event, constants, triggers }, context, callb
             return;
         }
 
-        return prop.field_value;
+        return prop;
     }
 
     async function getDefectById(defectId) {
@@ -52,7 +60,6 @@ exports.handler = async function ({ event, constants, triggers }, context, callb
 
         try {
             const response = await doqTestRequest(url, "GET", null);
-            console.log(response);
             return response;
         } catch (error) {
             console.log("[Error] Failed to get defect by id.", error);
@@ -78,6 +85,11 @@ exports.handler = async function ({ event, constants, triggers }, context, callb
             },
             {
                 op: "add",
+                path: "/fields/System.Tags",
+                value: "qTest",
+            },
+            {
+                op: "add",
                 path: "/relations/-",
                 value: {
                     rel: "Hyperlink",
@@ -86,9 +98,32 @@ exports.handler = async function ({ event, constants, triggers }, context, callb
             },
         ];
         try {
-            return await doAzDoRequest(url, "POST", requestBody);
+            const bug = await doAzDoRequest(url, "POST", requestBody);
+            console.log(`[Info] Bug created in Azure DevOps`);
+            return bug;
         } catch (error) {
-            console.log(`Failed to create bug in Azure DevOps: ${error}`);
+            console.log(`[Error] Failed to create bug in Azure DevOps: ${error}`);
+        }
+    }
+
+    async function updateDefectSummary(defectId, fieldId, fieldValue) {
+        const url = `https://${constants.ManagerURL}/api/v3/projects/${constants.ProjectID}/defects/${defectId}`;
+        const requestBody = {
+            properties: [
+                {
+                    field_id: fieldId,
+                    field_value: fieldValue,
+                },
+            ],
+        };
+
+        console.log(`[Info] Updating defect '${defectId}'.`);
+
+        try {
+            await doqTestRequest(url, "PUT", requestBody);
+            console.log(`[Info] Defect '${defectId}' updated.`);
+        } catch (error) {
+            console.log(`[Error] Failed to update defect '${defectId}'.`, error);
         }
     }
 
