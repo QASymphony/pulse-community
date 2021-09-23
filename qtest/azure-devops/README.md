@@ -2,16 +2,29 @@
 
 Synchronizes Azure DevOps work items with qTest requirements and defects.
 
-Features:
+## Features
 
+<!-- prettier-ignore -->
 * Automatically create new qTest Requirement when a new work item is created in Azure DevOps
 * Automatically update qTest Requirement when the corresponding work item is updated in Azure DevOps
 * Automatically delete qTest Requirement when the corresponding work item is deleted in Azure DevOps
 
 Planned features:
 
+<!-- prettier-ignore -->
 * Automatically create new Azure DevOps Bug when a new Defect is created in qTest
 * Automatically update qTest Defect when the corresponding Bug is updated in Azure DevOps
+
+## Concepts
+
+The Azure DevOps supports different [processes models](https://docs.microsoft.com/en-us/azure/devops/boards/work-items/guidance/choose-process?view=azure-devops-2020&tabs=basic-process). Depending on the process model you might want to map different work item types with qTest requirements and defects.
+
+| Process | Requirement          | Defect |
+| ------- | -------------------- | ------ |
+| Basic   | Issue                | n/a    |
+| Agile   | User Story           | Bug    |
+| Scrum   | Product backlog item | Bug    |
+| CMMI    | Requirement          | Bug    |
 
 ## Constants
 
@@ -34,6 +47,7 @@ The id of the qTest project where the Azure DevOps work items will be synchroniz
 
 Copy the project id from your web browser search bar:
 
+<!-- prettier-ignore -->
 * open the corresponding project in qTest Manager
 * copy the first integer number in the URL
 E.g. if you see the URL `https://xxx.qtestnet.com/p/123456/portal/project` in the browser then the project id is `123456`.
@@ -46,6 +60,7 @@ You can create a new module in qTest Manager in the requirement hierarchy (e.g. 
 
 Copy the parent id from your web browser search bar:
 
+<!-- prettier-ignore -->
 * create a new module or select an existing one in qTest Manager
 * copy the id from the query string of the URL
 E.g. if you see the URL `https://xxx.qtestnet.com/p/123456/portal/project#tab=requirements&object=0&id=9876543` in the browser then the parent id is `9876543`.
