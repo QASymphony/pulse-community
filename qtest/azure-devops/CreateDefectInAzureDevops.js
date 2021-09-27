@@ -11,15 +11,14 @@ exports.handler = async function ({ event, constants, triggers }, context, callb
 
     if (!defect) return;
 
-    const summaryField = getField(defect, "Summary");
-    const descriptionField = getField(defect, "Description");
+    const summaryField = getFieldById(defect, constants.DefectSummaryFieldID);
+    const descriptionField = getFieldById(defect, constants.DefectDescriptionFieldID);
 
     if (!summaryField || !descriptionField) {
         console.log("[Error] Fields not found, exiting.");
     }
 
     const summary = summaryField.field_value;
-    const summaryFieldId = summaryField.field_id;
     console.log(`[Info] Defect summary: ${summary}`);
     const description = descriptionField.field_value;
     console.log(`[Info] Defect description: ${description}`);
@@ -33,20 +32,20 @@ exports.handler = async function ({ event, constants, triggers }, context, callb
     const workItemId = bug.id;
     const newSummary = `${getNamePrefix(workItemId)}${summary}`;
     console.log(`[Info] New defect name: ${newSummary}`);
-    await updateDefectSummary(defectId, summaryFieldId, newSummary);
+    await updateDefectSummary(defectId, constants.DefectSummaryFieldID, newSummary);
 
     function getNamePrefix(workItemId) {
         return `WI${workItemId}: `;
     }
 
-    function getField(obj, fieldName) {
+    function getFieldById(obj, fieldId) {
         if (!obj || !obj.properties) {
             console.log(`[Warn] Obj/properties not found.`);
             return;
         }
-        const prop = obj.properties.find((p) => p.field_name === fieldName);
+        const prop = obj.properties.find((p) => p.field_id == fieldId);
         if (!prop) {
-            console.log(`[Warn] Property with field name '${fieldName}' not found.`);
+            console.log(`[Warn] Property with field id '${fieldId}' not found.`);
             return;
         }
 
@@ -80,7 +79,8 @@ exports.handler = async function ({ event, constants, triggers }, context, callb
             },
             {
                 op: "add",
-                path: "/fields/System.Description",
+                //path: "/fields/System.Description", //in case of Scrum AzDo template the description is not visible/used on the bug
+                path: "/fields/Microsoft.VSTS.TCM.ReproSteps",
                 value: description,
             },
             {
