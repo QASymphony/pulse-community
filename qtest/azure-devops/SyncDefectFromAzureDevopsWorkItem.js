@@ -6,15 +6,18 @@ const xml2js = require("xml2js");
 exports.handler = async function ({ event, constants, triggers }, context, callback) {
     function buildDefectDescription(eventData) {
         const fields = getFields(eventData);
-        return `<a href="${eventData.resource._links.html.href}" target="_blank">Open in Azure DevOps</a><br>
-<b>Type:</b> ${fields["System.WorkItemType"]}<br>
-<b>Area:</b> ${fields["System.AreaPath"]}<br>
-<b>Iteration:</b> ${fields["System.IterationPath"]}<br>
-<b>State:</b> ${fields["System.State"]}<br>
-<b>Reason:</b> ${fields["System.Reason"]}<br>
-<b>Repro steps:</b> ${fields["Microsoft.VSTS.TCM.ReproSteps"] || ""}
-<b>System info:</b> ${fields["Microsoft.VSTS.TCM.SystemInfo"] || ""}
-<b>Acceptance criteria:</b> ${fields["Microsoft.VSTS.Common.AcceptanceCriteria"] || ""}`;
+        return `Link to Azure DevOps: ${eventData.resource._links.html.href}
+Type: ${fields["System.WorkItemType"]}
+Area: ${fields["System.AreaPath"]}
+Iteration: ${fields["System.IterationPath"]}
+State: ${fields["System.State"]}
+Reason: ${fields["System.Reason"]}
+Repro steps: 
+${htmlToPlainText(fields["Microsoft.VSTS.TCM.ReproSteps"])}
+System info:
+${htmlToPlainText(fields["Microsoft.VSTS.TCM.SystemInfo"])}
+Acceptance criteria:
+${htmlToPlainText(fields["Microsoft.VSTS.Common.AcceptanceCriteria"])}`;
     }
 
     function buildDefectSummary(namePrefix, eventData) {
@@ -86,6 +89,20 @@ exports.handler = async function ({ event, constants, triggers }, context, callb
         return `WI${workItemId}: `;
     }
 
+    function htmlToPlainText(htmlText) {
+        if (!htmlText || htmlText.length === 0) return "";
+        return htmlText
+            .replace(/<style([\s\S]*?)<\/style>/gi, "")
+            .replace(/<script([\s\S]*?)<\/script>/gi, "")
+            .replace(/<\/div>/gi, "\n")
+            .replace(/<\/li>/gi, "\n")
+            .replace(/<li>/gi, "  *  ")
+            .replace(/<\/ul>/gi, "\n")
+            .replace(/<\/p>/gi, "\n")
+            .replace(/<br\s*[\/]?>/gi, "\n")
+            .replace(/<[^>]+>/gi, "")
+            .replace(/\n\s*\n/gi, "\n");
+    }
     async function getDefectByWorkItemId(workItemId) {
         const prefix = getNamePrefix(workItemId);
         const url = "https://" + constants.ManagerURL + "/api/v3/projects/" + constants.ProjectID + "/search";
