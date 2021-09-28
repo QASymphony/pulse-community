@@ -65,7 +65,7 @@ Copy the parent id from your web browser search bar:
 * copy the id from the query string of the URL
 E.g. if you see the URL `https://xxx.qtestnet.com/p/123456/portal/project#tab=requirements&object=0&id=9876543` in the browser then the parent id is `9876543`.
 
-### Constant "DescriptionFieldID"
+### Constant "RequirementDescriptionFieldID"
 
 The id of the "Description" field where the work item details will be synchronized to.
 
