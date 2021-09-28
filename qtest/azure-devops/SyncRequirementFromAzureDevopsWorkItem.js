@@ -154,7 +154,7 @@ exports.handler = async function ({ event, constants, triggers }, context, callb
         const url = `https://${constants.ManagerURL}/api/v3/projects/${constants.ProjectID}/requirements`;
         const requestBody = {
             name: name,
-            parent_id: constants.ParentID,
+            parent_id: constants.RequirementParentID,
             properties: [
                 {
                     field_id: constants.DescriptionFieldID,

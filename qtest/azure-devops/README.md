@@ -52,7 +52,7 @@ Copy the project id from your web browser search bar:
 * copy the first integer number in the URL
 E.g. if you see the URL `https://xxx.qtestnet.com/p/123456/portal/project` in the browser then the project id is `123456`.
 
-### Constant "ParentID"
+### Constant "RequirementParentID"
 
 The id of the parent module in the qTest requirements hierarchy where the Azure DevOps work items will be synchronized to as Requirements.
 
