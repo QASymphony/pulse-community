@@ -68,10 +68,7 @@ exports.handler = async function ({ event, constants, triggers }, context, callb
             return response;
         } catch (error) {
             console.log("[Error] Failed to get defect by id.", error);
-            failed = true;
         }
-
-        return { failed: failed, requirement: requirement };
     }
 
     async function createAzDoBug(defectId, name, description, link) {
