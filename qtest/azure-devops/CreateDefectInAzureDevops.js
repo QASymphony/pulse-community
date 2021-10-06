@@ -5,7 +5,13 @@ const xml2js = require("xml2js");
 // DO NOT EDIT exported "handler" function is the entrypoint
 exports.handler = async function ({ event, constants, triggers }, context, callback) {
     const defectId = event.defect.id;
-    console.log(`[Info] Create defect event received for '${defectId}'`);
+    const projectId = event.defect.project_id;
+    console.log(`[Info] Create defect event received for defect '${defectId}' in project '${projectId}'`);
+
+    if (projectId != constants.ProjectID) {
+        console.log(`[Info] Project not matching '${projectId}' != '${constants.ProjectID}', exiting.`);
+        return;
+    }
 
     const defect = await getDefectById(event.defect.id);
 
