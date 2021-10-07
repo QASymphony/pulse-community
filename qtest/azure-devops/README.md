@@ -11,7 +11,22 @@ Synchronizes Azure DevOps work items with qTest requirements and defects.
 * Automatically create new Azure DevOps Bug when a new Defect is created in qTest
 * Automatically update qTest Defect when the corresponding Bug is updated in Azure DevOps
 
-## Concepts
+## Concepts / Assumptions / Recommendations
+
+### System of record
+
+We assume that Azure DevOps is used as the system of record / source of truth.
+All changes of requirements and defects should be made in AzDo (except the initial creation of the defects in qTest).
+
+We recommend removing the following user permissions in qTest to enforce this workflow:
+
+<!-- prettier-ignore -->
+* Create Requirements
+* Edit Requirements
+* Delete Requirements
+* Edit Defects
+
+### Azure DevOps process models
 
 The Azure DevOps supports different [processes models](https://docs.microsoft.com/en-us/azure/devops/boards/work-items/guidance/choose-process?view=azure-devops-2020&tabs=basic-process). Depending on the process model you might want to map different work item types with qTest requirements and defects.
 
