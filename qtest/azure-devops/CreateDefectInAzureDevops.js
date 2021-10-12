@@ -13,30 +13,15 @@ exports.handler = async function ({ event, constants, triggers }, context, callb
         return;
     }
 
-    const defect = await getDefectById(event.defect.id);
+    const defectDetails = await getDefectDetailsById(defectId);
+    if (!defectDetails) return;
 
-    if (!defect) return;
-
-    const summaryField = getFieldById(defect, constants.DefectSummaryFieldID);
-    const descriptionField = getFieldById(defect, constants.DefectDescriptionFieldID);
-
-    if (!summaryField || !descriptionField) {
-        console.log("[Error] Fields not found, exiting.");
-    }
-
-    const summary = summaryField.field_value;
-    console.log(`[Info] Defect summary: ${summary}`);
-    const description = descriptionField.field_value;
-    console.log(`[Info] Defect description: ${description}`);
-    const link = defect.web_url;
-    console.log(`[Info] Defect link: ${link}`);
-
-    const bug = await createAzDoBug(defectId, summary, description, link);
+    const bug = await createAzDoBug(defectId, defectDetails.summary, defectDetails.description, defectDetails.link);
 
     if (!bug) return;
 
     const workItemId = bug.id;
-    const newSummary = `${getNamePrefix(workItemId)}${summary}`;
+    const newSummary = `${getNamePrefix(workItemId)}${defectDetails.summary}`;
     console.log(`[Info] New defect name: ${newSummary}`);
     await updateDefectSummary(defectId, constants.DefectSummaryFieldID, newSummary);
 
@@ -56,6 +41,28 @@ exports.handler = async function ({ event, constants, triggers }, context, callb
         }
 
         return prop;
+    }
+
+    async function getDefectDetailsById(defectId) {
+        const defect = await getDefectById(defectId);
+
+        if (!defect) return;
+
+        const summaryField = getFieldById(defect, constants.DefectSummaryFieldID);
+        const descriptionField = getFieldById(defect, constants.DefectDescriptionFieldID);
+
+        if (!summaryField || !descriptionField) {
+            console.log("[Error] Fields not found, exiting.");
+        }
+
+        const summary = summaryField.field_value;
+        console.log(`[Info] Defect summary: ${summary}`);
+        const description = descriptionField.field_value;
+        console.log(`[Info] Defect description: ${description}`);
+        const link = defect.web_url;
+        console.log(`[Info] Defect link: ${link}`);
+
+        return { summary: summary, description: description, link: link };
     }
 
     async function getDefectById(defectId) {
