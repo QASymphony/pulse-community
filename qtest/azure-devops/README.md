@@ -149,3 +149,9 @@ The id of the "Summary" field of the Defect in your qTest project where the work
 ### Constant "DefectDescriptionFieldID"
 
 The id of the "Description" field of the Defect in your qTest project where the work item details of Bugs will be synchronized to.
+
+## Limitations
+
+### Azure DevOps rate limits
+
+The synchronization code calls the Azure DevOps API on behalf of the user owning the ["AZDO_TOKEN"](#constant-azdo_token). The synchronization is event based, hence the frequency of the API calls depends on the usage pattern of the qTest users (e.g. how often a new defect is created in qTest). The synchronization cannot handle blocked or delayed requests due to [rate limits in Azure DevOps](https://docs.microsoft.com/en-us/azure/devops/integrate/concepts/rate-limits)
